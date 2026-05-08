@@ -10,4 +10,9 @@ DerivedData/
 .DS_Store
 
 # Local Codex reference materials
-reference/
+reference/*
+!reference/VibeCoding_Workshop_session6/
+reference/VibeCoding_Workshop_session6/*
+!reference/VibeCoding_Workshop_session6/session6/
+reference/VibeCoding_Workshop_session6/session6/*
+!reference/VibeCoding_Workshop_session6/session6/koreanphrasebuddy-rehearsal-notes.md
