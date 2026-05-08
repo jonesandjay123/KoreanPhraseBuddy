@@ -8,3 +8,6 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# Local Codex reference materials
+reference/
