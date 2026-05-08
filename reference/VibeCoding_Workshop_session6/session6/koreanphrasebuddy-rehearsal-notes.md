@@ -355,3 +355,23 @@ Requirements:
 - Keep the app UI copy Japanese-first for the student build
 - Keep the UI and code beginner-friendly
 ```
+
+## Final Polish Notes
+
+Current rehearsal app polish:
+- The installed app display name is `Seoul Buddy` so the iPad Home Screen does not truncate `Seoul Phrase Buddy` into an awkward single-looking string.
+- The in-app navigation title remains `Seoul Phrase Buddy` because there is enough space inside the app.
+- A custom 1024x1024 app icon is wired through `Assets.xcassets/AppIcon.appiconset/AppIcon.png`.
+- Card action buttons use a compact custom icon/text label so the icon belongs visually to its own text, not the next button.
+- Microphone permission uses `AVAudioApplication.requestRecordPermission` to avoid the iOS 17 deprecation warning from `AVAudioSession.requestRecordPermission`.
+
+Important cleanup / handoff notes:
+- Do not commit `Config/Secrets.xcconfig`; it contains the local Gemini API key and is intentionally ignored.
+- The key setup pitfall for iOS is still important: `Secrets.xcconfig` alone is not enough unless the target Info mapping exposes `GeminiAPIKey = $(GEMINI_API_KEY)`.
+- If the app icon or Home Screen name looks stale on iPad, delete the installed app and run from Xcode again because iOS may cache those assets.
+- When adapting this for Azunyan, convert UI text and source-language variables from Chinese-first to Japanese-first. The destination translation and TTS remain Korean.
+
+Jarvis / next-agent handoff:
+- Start with this file.
+- Also read the root `README.md` for current manual setup and test instructions.
+- For the actual Session 6 teaching guide, use the "Strategy" section above as the class order, not the order in which Jones rehearsed the implementation.

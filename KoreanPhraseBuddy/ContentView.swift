@@ -279,19 +279,19 @@ private struct PhraseCardRow: View {
                 }
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 16) {
                 Button(action: onSpeak) {
-                    Label("播放", systemImage: "play.fill")
+                    CompactActionLabel(title: "播放", systemImage: "play.fill")
                 }
                 .disabled(card.korean.isEmpty || isTranslating)
 
                 Button(action: onCopy) {
-                    Label("複製", systemImage: "doc.on.doc")
+                    CompactActionLabel(title: "複製", systemImage: "doc.on.doc")
                 }
                 .disabled(card.korean.isEmpty || isTranslating)
 
                 Button(action: onTranslate) {
-                    Label(translateButtonTitle, systemImage: "translate")
+                    CompactActionLabel(title: translateButtonTitle, systemImage: "translate")
                 }
                 .disabled(isTranslating)
 
@@ -311,6 +311,20 @@ private struct PhraseCardRow: View {
     private var translateButtonTitle: String {
         if isTranslating { return "翻譯中" }
         return card.korean.isEmpty ? "翻譯" : "重翻"
+    }
+}
+
+private struct CompactActionLabel: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+            Text(title)
+        }
+        .font(.subheadline)
+        .fixedSize()
     }
 }
 

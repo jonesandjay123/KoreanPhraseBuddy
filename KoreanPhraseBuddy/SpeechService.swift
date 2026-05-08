@@ -103,7 +103,7 @@ final class SpeechService {
 
     private func requestMicrophonePermission() async throws {
         let isGranted = await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { isGranted in
+            AVAudioApplication.requestRecordPermission { isGranted in
                 continuation.resume(returning: isGranted)
             }
         }
