@@ -6,6 +6,10 @@ struct ContentView: View {
     @State private var speechService = SpeechService()
     @State private var chineseText = ""
     @State private var statusMessage = ""
+    @State private var translatingCardIDs: Set<UUID> = []
+    @State private var cardPendingDeletion: PhraseCard?
+    @State private var isDeleteConfirmationPresented = false
+    @State private var isImportSheetPresented = false
 
     var body: some View {
         NavigationStack {
@@ -18,13 +22,13 @@ struct ContentView: View {
                 if store.cards.isEmpty {
                     emptyState
                 } else {
-                    Section("旅行小卡") {
+                    Section {
                         ForEach(store.cards) { card in
                             PhraseCardRow(
                                 card: card,
+                                isTranslating: translatingCardIDs.contains(card.id),
                                 onTranslate: {
-                                    store.update(card, korean: sampleKorean(for: card.chinese))
-                                    statusMessage = "已加入韓文範例，下一步會接 Gemini"
+                                    translate(card)
                                 },
                                 onCopy: {
                                     copyKorean(from: card)
@@ -33,11 +37,13 @@ struct ContentView: View {
                                     speakKorean(from: card)
                                 },
                                 onDelete: {
-                                    store.delete(card)
-                                    statusMessage = "已刪除小卡"
+                                    cardPendingDeletion = card
+                                    isDeleteConfirmationPresented = true
                                 }
                             )
                         }
+                    } header: {
+                        phraseListHeader
                     }
                 }
             }
@@ -52,6 +58,43 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .confirmationDialog(
+            "刪除這張小卡？",
+            isPresented: $isDeleteConfirmationPresented,
+            titleVisibility: .visible
+        ) {
+            Button("刪除", role: .destructive) {
+                if let card = cardPendingDeletion {
+                    store.delete(card)
+                    statusMessage = "已刪除小卡"
+                }
+                cardPendingDeletion = nil
+            }
+            Button("取消", role: .cancel) {
+                cardPendingDeletion = nil
+            }
+        } message: {
+            if let card = cardPendingDeletion {
+                Text(card.chinese)
+            }
+        }
+        .sheet(isPresented: $isImportSheetPresented) {
+            BatchImportSheet(
+                onImport: { jsonText in
+                    do {
+                        let result = try ExternalTranslationBridge.importTranslations(
+                            from: jsonText,
+                            currentCards: store.cards
+                        )
+                        store.replaceCards(result.cards)
+                        statusMessage = "已更新 \(result.updatedCount) 張小卡"
+                        isImportSheetPresented = false
+                    } catch {
+                        statusMessage = error.localizedDescription
+                    }
+                }
+            )
         }
     }
 
@@ -92,6 +135,24 @@ struct ContentView: View {
         }
     }
 
+    private var phraseListHeader: some View {
+        HStack {
+            Text("旅行小卡")
+            Spacer()
+            Button {
+                exportAllCardsForExternalTranslation()
+            } label: {
+                Label("匯出", systemImage: "square.and.arrow.up")
+            }
+            Button {
+                isImportSheetPresented = true
+            } label: {
+                Label("匯入", systemImage: "square.and.arrow.down")
+            }
+        }
+        .font(.subheadline)
+    }
+
     private func addCard() {
         store.add(chinese: chineseText)
         chineseText = ""
@@ -118,29 +179,36 @@ struct ContentView: View {
         statusMessage = "正在播放韓文"
     }
 
-    private func sampleKorean(for chinese: String) -> String {
-        if chinese.contains("刷卡") || chinese.contains("信用卡") {
-            return "카드 결제 가능할까요?"
-        }
+    private func translate(_ card: PhraseCard) {
+        translatingCardIDs.insert(card.id)
+        statusMessage = "Gemini 正在翻譯..."
 
-        if chinese.contains("海鮮") || chinese.contains("過敏") {
-            return "제가 해산물 알레르기가 있는데, 이 음식에 해산물이 들어가나요?"
-        }
+        Task {
+            do {
+                let korean = try await GeminiTranslator().translateToKorean(chinese: card.chinese)
+                store.update(card, korean: korean)
+                statusMessage = "已補上韓文"
+            } catch {
+                statusMessage = "\(error.localizedDescription)。可按「匯出」改用網頁版 LLM。"
+            }
 
-        if chinese.contains("洗手間") || chinese.contains("廁所") {
-            return "화장실이 어디에 있나요?"
+            translatingCardIDs.remove(card.id)
         }
+    }
 
-        if chinese.contains("弘大") || chinese.contains("車") || chinese.contains("地鐵") {
-            return "이 열차가 홍대입구역까지 가나요?"
+    private func exportAllCardsForExternalTranslation() {
+        do {
+            UIPasteboard.general.string = try ExternalTranslationBridge.buildExportPrompt(cards: store.cards)
+            statusMessage = "已複製整批匯出 prompt"
+        } catch {
+            statusMessage = error.localizedDescription
         }
-
-        return "안녕하세요. 이것을 한국어로 자연스럽게 말하고 싶어요."
     }
 }
 
 private struct PhraseCardRow: View {
     let card: PhraseCard
+    let isTranslating: Bool
     let onTranslate: () -> Void
     let onCopy: () -> Void
     let onSpeak: () -> Void
@@ -157,20 +225,31 @@ private struct PhraseCardRow: View {
                 .foregroundStyle(card.korean.isEmpty ? .tertiary : .primary)
                 .textSelection(.enabled)
 
+            if isTranslating {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Gemini 正在整理成自然韓文...")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             HStack(spacing: 8) {
                 Button(action: onSpeak) {
                     Label("播放", systemImage: "play.fill")
                 }
-                .disabled(card.korean.isEmpty)
+                .disabled(card.korean.isEmpty || isTranslating)
 
                 Button(action: onCopy) {
                     Label("複製", systemImage: "doc.on.doc")
                 }
-                .disabled(card.korean.isEmpty)
+                .disabled(card.korean.isEmpty || isTranslating)
 
                 Button(action: onTranslate) {
-                    Label(card.korean.isEmpty ? "翻譯" : "重翻", systemImage: "translate")
+                    Label(translateButtonTitle, systemImage: "translate")
                 }
+                .disabled(isTranslating)
 
                 Spacer()
 
@@ -178,10 +257,54 @@ private struct PhraseCardRow: View {
                     Image(systemName: "trash")
                 }
                 .accessibilityLabel("刪除")
+                .disabled(isTranslating)
             }
             .buttonStyle(.borderless)
         }
         .padding(.vertical, 8)
+    }
+
+    private var translateButtonTitle: String {
+        if isTranslating { return "翻譯中" }
+        return card.korean.isEmpty ? "翻譯" : "重翻"
+    }
+}
+
+private struct BatchImportSheet: View {
+    let onImport: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var jsonText = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text("貼上 ChatGPT / Gemini 網頁版回傳的 JSON 陣列。App 會用 id 對應目前小卡，只補上 korean 欄位。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("JSON") {
+                    TextEditor(text: $jsonText)
+                        .frame(minHeight: 120)
+                }
+            }
+            .navigationTitle("匯入外部翻譯")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("匯入") {
+                        onImport(jsonText)
+                    }
+                    .disabled(jsonText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
     }
 }
 

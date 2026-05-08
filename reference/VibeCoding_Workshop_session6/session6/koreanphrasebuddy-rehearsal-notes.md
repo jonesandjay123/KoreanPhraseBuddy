@@ -130,3 +130,125 @@ After Jones confirms this MVP runs in Xcode:
 2. Decide where the API key goes for rehearsal.
 3. Record any API or Xcode errors.
 4. Convert the final path into a student-facing session6 update.
+
+## Step 2: Gemini Key Setup And Real Translation
+
+Goal:
+- Use an Xcode-native local secret mechanism similar to Android `local.properties`.
+- Keep the Gemini API key out of git.
+- Replace fake translation with a real Gemini call.
+
+Implementation:
+- Added `Config/BuildSettings.xcconfig`.
+- Added optional include of local-only `Config/Secrets.xcconfig`.
+- Added `Config/Secrets.example.xcconfig` as the committed template.
+- Added `INFOPLIST_KEY_GeminiAPIKey = "$(GEMINI_API_KEY)"` to the target build settings.
+- Added `AppConfig.swift` to read `GeminiAPIKey` from the app bundle Info.plist.
+- Added `GeminiTranslator.swift` with a minimal `generateContent` REST request.
+- Updated the Translate button to call Gemini and save the returned Korean.
+
+Manual key setup:
+
+```text
+Config/Secrets.xcconfig
+```
+
+```text
+GEMINI_API_KEY = your_real_key_here
+```
+
+Teaching note:
+- For class, show `Secrets.example.xcconfig` first, then copy it to `Secrets.xcconfig`.
+- Say explicitly: this is fine for a private workshop prototype, but a production app should not ship secrets directly in the app bundle.
+- If API setup blocks the student, skip Gemini and use external LLM prompt copy/paste as the fallback.
+
+### Important Xcode Pitfall: Build Setting Is Not Enough
+
+Observed during rehearsal:
+- `Config/Secrets.xcconfig` was correct.
+- `xcodebuild -showBuildSettings` showed `GEMINI_API_KEY` correctly.
+- The app still showed: `請先在 Secrets.xcconfig 設定 GEMINI_API_KEY`.
+
+Root cause:
+- The key existed in Xcode build settings, but the running app reads from the app bundle `Info.plist`.
+- The `Info.plist` mapping must use the same key name that `AppConfig.swift` reads.
+- In this app, runtime code reads:
+
+```swift
+Bundle.main.object(forInfoDictionaryKey: "GeminiAPIKey")
+```
+
+Correct `Info.plist` mapping:
+
+```text
+GeminiAPIKey = $(GEMINI_API_KEY)
+```
+
+Manual Xcode check:
+1. Open the project in Xcode.
+2. Select `TARGETS -> KoreanPhraseBuddy`.
+3. Open `Info`.
+4. Under `Custom iOS Target Properties`, confirm there is a row:
+   - Key: `GeminiAPIKey`
+   - Type: `String`
+   - Value: `$(GEMINI_API_KEY)`
+5. Clean Build Folder, then Run again.
+
+Teaching note:
+- This is a major class pitfall. Even if the AI coding agent writes the Swift code and `.xcconfig` files correctly, Xcode may still need a manual target Info mapping.
+- Tell the student the data flow explicitly:
+
+```text
+Config/Secrets.xcconfig
+  -> GEMINI_API_KEY build setting
+  -> Info.plist GeminiAPIKey
+  -> AppConfig.swift
+  -> GeminiTranslator.swift
+```
+
+Successful rehearsal result:
+- Jones manually added the `GeminiAPIKey = $(GEMINI_API_KEY)` mapping.
+- Gemini API translation worked in the app.
+
+## Step 3: Travel Reliability UX
+
+Goal:
+- Make the app safer and more reliable for real travel use.
+- Add a fallback path when Gemini API fails, quota is unavailable, or class Wi-Fi is unstable.
+
+Implementation:
+- Translation state:
+  - Each card now disables action buttons while Gemini is translating.
+  - The card shows a `ProgressView` with a short "Gemini 正在整理..." message.
+- Delete safety:
+  - Tapping the trash icon no longer deletes immediately.
+  - A confirmation dialog appears before deleting the card.
+- External LLM fallback:
+  - The phrase list header has `匯出` and `匯入` buttons, matching the `JapanPhraseBuddy` design.
+  - `匯出` copies a batch prompt containing the full current card list as JSON.
+  - The user pastes that prompt into ChatGPT / Gemini web.
+  - The external LLM returns a JSON array.
+  - `匯入` opens a sheet where the user pastes that JSON array.
+  - The app uses `id` to match existing cards and only updates `korean`.
+
+Teaching note:
+- This is a good moment to explain that API features need fallback routes.
+- The student should learn: "If the built-in API fails, I can still use the app by exporting data to another AI and importing the result."
+- This mirrors the useful idea from `JapanPhraseBuddy`: data can leave the app as JSON, be processed elsewhere, then return as JSON.
+
+Student-facing prompt idea:
+
+```text
+Please improve this SwiftUI phrase card app for travel reliability.
+
+Requirements:
+- Show a loading state while Gemini is translating a card
+- Disable that card's action buttons during translation
+- Ask for confirmation before deleting a card
+- Add Export and Import buttons above the card list
+- Export should copy a batch prompt containing all phrase cards as JSON
+- The prompt should ask an external LLM to fill the korean field for each card
+- Import should accept a JSON array returned by the external LLM
+- Import should use id to match existing cards and update only the korean field
+- Keep the code simple and beginner-friendly
+```

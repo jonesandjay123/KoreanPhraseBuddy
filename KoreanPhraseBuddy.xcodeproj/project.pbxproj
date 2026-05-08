@@ -8,11 +8,25 @@
 
 /* Begin PBXFileReference section */
 		9DFB239F2FAD7B3900FC97A2 /* KoreanPhraseBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KoreanPhraseBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9DFB23AD2FAD8F1000FC97A2 /* Config/BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/BuildSettings.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9D6105D12FADBD0600F88C89 /* Exceptions for "KoreanPhraseBuddy" folder in "KoreanPhraseBuddy" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9DFB239E2FAD7B3900FC97A2 /* KoreanPhraseBuddy */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9DFB23A12FAD7B3900FC97A2 /* KoreanPhraseBuddy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9D6105D12FADBD0600F88C89 /* Exceptions for "KoreanPhraseBuddy" folder in "KoreanPhraseBuddy" target */,
+			);
 			path = KoreanPhraseBuddy;
 			sourceTree = "<group>";
 		};
@@ -32,6 +46,7 @@
 		9DFB23962FAD7B3900FC97A2 = {
 			isa = PBXGroup;
 			children = (
+				9DFB23AD2FAD8F1000FC97A2 /* Config/BuildSettings.xcconfig */,
 				9DFB23A12FAD7B3900FC97A2 /* KoreanPhraseBuddy */,
 				9DFB23A02FAD7B3900FC97A2 /* Products */,
 			);
@@ -248,6 +263,7 @@
 		};
 		9DFB23AB2FAD7B3B00FC97A2 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9DFB23AD2FAD8F1000FC97A2 /* Config/BuildSettings.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -256,7 +272,9 @@
 				DEVELOPMENT_TEAM = AA3H799M2U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KoreanPhraseBuddy/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Seoul Phrase Buddy";
+				INFOPLIST_KEY_GeminiAPIKey = "$(GEMINI_API_KEY)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -281,6 +299,7 @@
 		};
 		9DFB23AC2FAD7B3B00FC97A2 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9DFB23AD2FAD8F1000FC97A2 /* Config/BuildSettings.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -289,7 +308,9 @@
 				DEVELOPMENT_TEAM = AA3H799M2U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KoreanPhraseBuddy/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Seoul Phrase Buddy";
+				INFOPLIST_KEY_GeminiAPIKey = "$(GEMINI_API_KEY)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

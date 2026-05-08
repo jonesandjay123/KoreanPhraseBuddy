@@ -35,6 +35,10 @@ final class PhraseStore {
         cards[index].korean = korean.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func replaceCards(_ updatedCards: [PhraseCard]) {
+        cards = updatedCards
+    }
+
     func seedExamplesIfNeeded() {
         guard cards.isEmpty else { return }
 
