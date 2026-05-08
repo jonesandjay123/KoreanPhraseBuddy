@@ -39,6 +39,21 @@ final class PhraseStore {
         cards = updatedCards
     }
 
+    func moveCards(from source: IndexSet, to destination: Int) {
+        var updatedCards = cards
+        let sortedSource = source.sorted()
+        let movingCards = sortedSource.map { updatedCards[$0] }
+
+        for index in sortedSource.reversed() {
+            updatedCards.remove(at: index)
+        }
+
+        let adjustedDestination = destination - sortedSource.filter { $0 < destination }.count
+        let safeDestination = max(0, min(adjustedDestination, updatedCards.count))
+        updatedCards.insert(contentsOf: movingCards, at: safeDestination)
+        cards = updatedCards
+    }
+
     func seedExamplesIfNeeded() {
         guard cards.isEmpty else { return }
 

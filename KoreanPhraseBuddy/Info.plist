@@ -4,5 +4,9 @@
 <dict>
 	<key>GeminiAPIKey</key>
 	<string>$(GEMINI_API_KEY)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>需要使用麥克風，把你說的中文轉成旅行小卡文字。</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>需要使用語音辨識，把你說的中文填入輸入框。</string>
 </dict>
 </plist>

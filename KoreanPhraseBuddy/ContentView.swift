@@ -42,6 +42,10 @@ struct ContentView: View {
                                 }
                             )
                         }
+                        .onMove { source, destination in
+                            store.moveCards(from: source, to: destination)
+                            statusMessage = "已調整小卡順序"
+                        }
                     } header: {
                         phraseListHeader
                     }
@@ -49,6 +53,11 @@ struct ContentView: View {
             }
             .navigationTitle("Seoul Phrase Buddy")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !store.cards.isEmpty {
+                        EditButton()
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         store.seedExamplesIfNeeded()
@@ -107,14 +116,27 @@ struct ContentView: View {
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(3...5)
 
-            Button {
-                addCard()
-            } label: {
-                Label("新增小卡", systemImage: "plus.circle.fill")
-                    .frame(maxWidth: .infinity)
+            HStack(spacing: 10) {
+                Button {
+                    toggleChineseDictation()
+                } label: {
+                    Label(
+                        speechService.isListeningForChinese ? "停止" : "語音",
+                        systemImage: speechService.isListeningForChinese ? "stop.circle.fill" : "mic.circle.fill"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .tint(speechService.isListeningForChinese ? .red : .blue)
+
+                Button {
+                    addCard()
+                } label: {
+                    Label("新增小卡", systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(chineseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(chineseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             if !statusMessage.isEmpty {
                 Text(statusMessage)
@@ -154,9 +176,31 @@ struct ContentView: View {
     }
 
     private func addCard() {
+        speechService.stopChineseDictation()
         store.add(chinese: chineseText)
         chineseText = ""
         statusMessage = "已新增小卡，可稍後翻譯"
+    }
+
+    private func toggleChineseDictation() {
+        if speechService.isListeningForChinese {
+            speechService.stopChineseDictation()
+            statusMessage = "已停止語音輸入"
+            return
+        }
+
+        statusMessage = "正在聽中文..."
+
+        Task {
+            do {
+                try await speechService.startChineseDictation { transcript in
+                    chineseText = transcript
+                    statusMessage = "正在聽中文..."
+                }
+            } catch {
+                statusMessage = error.localizedDescription
+            }
+        }
     }
 
     private func copyKorean(from card: PhraseCard) {
